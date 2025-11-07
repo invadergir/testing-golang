@@ -108,6 +108,31 @@ func (a *Asserter) NotEqual(expected any, actual any) {
 	}
 }
 
+func (a *Asserter) True(actual bool) {
+	if !actual {
+		a.PrintDivider()
+		a.testingT.Errorf("got 'false', but expected to get 'true'.")
+		a.PrintStack(1)
+	}
+}
+
+func (a *Asserter) NotTrue(actual bool) {
+	if actual {
+		a.PrintDivider()
+		a.testingT.Errorf("got 'true', but expected to get 'false'.")
+		a.PrintStack(1)
+	}
+}
+
+func (a *Asserter) False(actual bool) {
+	if actual {
+		a.PrintDivider()
+		a.testingT.Errorf("got 'true', but expected to get 'false'.")
+		a.PrintStack(1)
+	}
+}
+
+// support for LT, GT, LE, GE assertions:
 type Number interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
