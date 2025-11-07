@@ -14,12 +14,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// // Asserter template test
-// func Test_(t *testing.T) {
-// 	var assert = MakeAsserter(t)
-// 	assert.True(true)
-// }
-
 // Define the suite, and absorb the built-in basic suite
 // functionality from testify - including a T() method which
 // returns the current testing context
@@ -29,9 +23,10 @@ type ChiTestSuite struct {
 	Server *httptest.Server
 }
 
-// Setup function for the Suite
+// Setup function for the entire Suite (like beforeAll())
 func (suite *ChiTestSuite) SetupSuite() {
 	// if testing a real service, we wouldn't implement the router functions here of course:
+	// TODO make a real impl that we can test.
 	suite.Router = setupRouter()
 	suite.Server = httptest.NewServer(suite.Router)
 	// go suite.startServer()
@@ -47,11 +42,14 @@ func setupRouter() *chi.Mux {
 	return r
 }
 
+// Teardown for the suite (like afterAll())
 func (suite *ChiTestSuite) TearDownSuite() {
 	suite.Server.Close()
 }
 
-// Testify style
+// Test example - tests the /ping route returns 'pong':
+// Notice no need to pass in the 't' testing context!  The suite
+// class has assertions built-in which make that unnecessary.
 func (s *ChiTestSuite) Test_Template() {
 	var resp, err = http.Get(s.Server.URL + "/ping")
 
