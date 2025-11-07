@@ -103,7 +103,7 @@ func (a *Asserter) Equal(expected any, actual any) {
 func (a *Asserter) NotEqual(expected any, actual any) {
 	if !(expected != actual) {
 		a.PrintDivider()
-		a.testingT.Errorf("values are equal and not expected to be: %v (type %v)", actual, reflect.TypeOf(actual))
+		a.testingT.Errorf("Got %v (type %v), but expected to get anything but %v (type %v)", actual, reflect.TypeOf(actual), expected, reflect.TypeOf(expected))
 		a.PrintStack(1)
 	}
 }
