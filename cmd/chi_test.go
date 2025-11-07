@@ -1,10 +1,17 @@
 package main
 
 import (
+	"io"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	// chi:
+	"net/http"
+	"net/http/httptest"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 // // Asserter template test
@@ -18,40 +25,45 @@ import (
 // returns the current testing context
 type ChiTestSuite struct {
 	suite.Suite
-	VariableThatShouldStartAtFive int
+	Router *chi.Mux
+	Server *httptest.Server
 }
 
-// Setup function
-func (suite *ChiTestSuite) SetupTest() {
-	suite.VariableThatShouldStartAtFive = 5
+// Setup function for the Suite
+func (suite *ChiTestSuite) SetupSuite() {
+	// if testing a real service, we wouldn't implement the router functions here of course:
+	suite.Router = setupRouter()
+	suite.Server = httptest.NewServer(suite.Router)
+	// go suite.startServer()
 }
 
-// All methods that begin with "Test" are run as tests within a
-// suite.
+// For real tests this won't be necessary, we can call some other router maker with maybe some mocks:
+func setupRouter() *chi.Mux {
+	var r = chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("pong"))
+	})
+	return r
+}
+
+func (suite *ChiTestSuite) TearDownSuite() {
+	suite.Server.Close()
+}
 
 // Testify style
-func (suite *ChiTestSuite) Test_SetupWorked1() {
-	assert.Equal(suite.T(), 5, suite.VariableThatShouldStartAtFive)
-}
+func (s *ChiTestSuite) Test_Template() {
+	var resp, err = http.Get(s.Server.URL + "/ping")
 
-// Testify style
-func (suite *ChiTestSuite) Test_SetupWorked2() {
-	assert.Equal(suite.T(), 5, suite.VariableThatShouldStartAtFive)
-}
+	s.Require().NoError(err)
+	defer resp.Body.Close()
 
-// Asserter style - doesn't work as expected when inside a test suite.
-func (suite *ChiTestSuite) Test_SetupWorkedAlsoAsserterWorks() {
-	var assert = MakeAsserter(suite.T())
-	assert.Equal(5, suite.VariableThatShouldStartAtFive)
-	assert.NotEqual(6, suite.VariableThatShouldStartAtFive)
-}
+	s.Equal(http.StatusOK, resp.StatusCode)
 
-// Asserter style - doesn't work as expected when inside a test suite.
-// TODO sometime try to use Asserter to wrap the fns inside assertions.go
-func (suite *ChiTestSuite) Test_SetupWorkedAlsoAsserterWorks2() {
-	var assert = MakeAsserter(suite.T())
-	assert.Equal(5, suite.VariableThatShouldStartAtFive)
-	assert.NotEqual(6, suite.VariableThatShouldStartAtFive)
+	bodyRaw, err := io.ReadAll(resp.Body)
+	body := string(bodyRaw)
+	s.Require().NoError(err)
+	s.Equal("pong", body)
 }
 
 // This triggers the start of the test suite:

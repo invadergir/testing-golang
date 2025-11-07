@@ -18,6 +18,9 @@ build: clean vet
 test: build
 	go test ./...
 
+testv: build
+	go test ./... -v
+
 run: build
 	bin/testing-golang
 
